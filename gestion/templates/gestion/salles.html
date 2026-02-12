@@ -1,0 +1,10 @@
+<h2>Liste des Salles</h2>
+
+{% for salle in salles %}
+    <div>
+        <h3>{{ salle.nom }}</h3>
+        <p>Capacité : {{ salle.capacite }}</p>
+        <p>Localisation : {{ salle.localisation }}</p>
+        <a href="{% url 'reserver' salle.id %}">Réserver</a>
+    </div>
+{% endfor %}

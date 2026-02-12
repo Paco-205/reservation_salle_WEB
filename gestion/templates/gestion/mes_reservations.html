@@ -1,0 +1,16 @@
+{% extends "gestion/base.html" %}
+
+{% block content %}
+
+<h2>Mes réservations</h2>
+
+{% for r in reservations %}
+    <div class="card mb-2 p-2">
+        <strong>{{ r.salle.nom }}</strong> - {{ r.date }} - {{ r.heure_debut }} à {{ r.heure_fin }}
+        <a href="{% url 'annuler' r.id %}" class="btn btn-sm btn-danger float-end">Annuler</a>
+    </div>
+{% empty %}
+    <p>Vous n'avez aucune réservation.</p>
+{% endfor %}
+
+{% endblock %}

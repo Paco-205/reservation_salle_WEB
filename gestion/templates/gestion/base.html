@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Réservation de Salles</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="/">Gestion Salles</a>
+
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto">
+
+        {% if user.is_authenticated %}
+
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'reserver' %}">Réserver</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'mes_reservations' %}">Mes Réservations</a>
+            </li>
+
+            {% if user.is_staff %}
+            <li class="nav-item">
+                <a class="nav-link text-warning" href="{% url 'dashboard' %}">Admin Panel</a>
+            </li>
+            {% endif %}
+
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="{% url 'logout' %}">Déconnexion</a>
+            </li>
+
+        {% else %}
+
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}">Connexion</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'inscription' %}">Inscription</a>
+            </li>
+
+        {% endif %}
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5">
+    {% block content %}
+    {% endblock %}
+</div>
+
+</body>
+</html>

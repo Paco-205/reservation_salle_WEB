@@ -1,0 +1,15 @@
+{% extends "gestion/base.html" %}
+
+{% block content %}
+
+<div class="text-center">
+    <h1 class="mb-4">Système de Réservation de Salles</h1>
+
+    {% if user.is_authenticated %}
+        <h4>Bienvenue {{ user.username }}</h4>
+    {% else %}
+        <p>Connectez-vous pour réserver une salle</p>
+    {% endif %}
+</div>
+
+{% endblock %}

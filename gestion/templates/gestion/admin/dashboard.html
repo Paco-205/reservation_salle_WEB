@@ -1,0 +1,27 @@
+{% extends "gestion/base.html" %}
+
+{% block content %}
+
+<h3>Tableau de bord Administrateur</h3>
+
+<h5 class="mt-4">Toutes les réservations</h5>
+
+<table class="table table-striped">
+<tr>
+    <th>Utilisateur</th>
+    <th>Salle</th>
+    <th>Date</th>
+    <th>Heure</th>
+</tr>
+
+{% for r in reservations %}
+<tr>
+    <td>{{ r.utilisateur.username }}</td>
+    <td>{{ r.salle.nom }}</td>
+    <td>{{ r.date }}</td>
+    <td>{{ r.heure_debut }} - {{ r.heure_fin }}</td>
+</tr>
+{% endfor %}
+</table>
+
+{% endblock %}

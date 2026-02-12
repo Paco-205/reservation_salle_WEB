@@ -1,0 +1,26 @@
+
+
+{% extends "gestion/base.html" %}
+
+{% block content %}
+
+
+<h3 class="mb-4">Réserver une salle</h3>
+
+<form method="POST" class="card p-4 shadow">
+    {% csrf_token %}
+
+    <select name="salle" class="form-control mb-3">
+        {% for salle in salles %}
+            <option value="{{ salle.id }}">{{ salle.nom }} ({{ salle.capacite }} places)</option>
+        {% endfor %}
+    </select>
+
+    <input type="date" name="date" class="form-control mb-3" required>
+    <input type="time" name="heure_debut" class="form-control mb-3" required>
+    <input type="time" name="heure_fin" class="form-control mb-3" required>
+
+    <button class="btn btn-primary w-100">Réserver</button>
+</form>
+
+{% endblock %}
