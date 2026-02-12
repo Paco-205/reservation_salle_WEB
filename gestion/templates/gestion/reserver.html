@@ -16,7 +16,7 @@
         {% endfor %}
     </select>
 
-    <input type="date" name="date" class="form-control mb-3" required>
+    <input type="date" name="date" min="{{ today }}" class="form-control mb-3" required>
     <input type="time" name="heure_debut" class="form-control mb-3" required>
     <input type="time" name="heure_fin" class="form-control mb-3" required>
 

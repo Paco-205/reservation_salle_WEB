@@ -2,8 +2,6 @@
 
 {% block content %}
 
-<h3>Tableau de bord Administrateur</h3>
-
 <h5 class="mt-4">Toutes les réservations</h5>
 
 <table class="table table-striped">
@@ -12,16 +10,26 @@
     <th>Salle</th>
     <th>Date</th>
     <th>Heure</th>
+    <th>Action</th>
 </tr>
 
 {% for r in reservations %}
 <tr>
-    <td>{{ r.utilisateur.username }}</td>
+    <td>{{ r.user.username }}</td>
     <td>{{ r.salle.nom }}</td>
     <td>{{ r.date }}</td>
     <td>{{ r.heure_debut }} - {{ r.heure_fin }}</td>
+    <td>
+        <a href="{% url 'admin_annuler' r.id %}" class="btn btn-danger btn-sm">Annuler</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5">Aucune réservation</td>
 </tr>
 {% endfor %}
 </table>
+
+<p>Total réservations : {{ reservations|length }}</p>
 
 {% endblock %}

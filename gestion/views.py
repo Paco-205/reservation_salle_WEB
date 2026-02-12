@@ -77,23 +77,57 @@ def reserver(request):
 
     if request.method == "POST":
         salle_id = request.POST.get("salle")
-        date = request.POST.get("date")
+        date_res = request.POST.get("date")
         heure_debut = request.POST.get("heure_debut")
         heure_fin = request.POST.get("heure_fin")
 
-        salle = Salle.objects.get(id=salle_id)
+        if not date_res:
+            messages.error(request, "Veuillez choisir une date.")
+            return redirect("reserver")
 
+        date_obj = datetime.strptime(date_res, "%Y-%m-%d").date()
+        heure_debut_obj = datetime.strptime(heure_debut, "%H:%M").time()
+
+        # 🚫 Date passée
+        if date_obj < date.today():
+            messages.error(request, "Impossible de réserver une date passée.")
+            return redirect("reserver")
+
+        # 🚫 Heure passée
+        if date_obj == date.today() and heure_debut_obj <= datetime.now().time():
+            messages.error(request, "Impossible de réserver une heure passée.")
+            return redirect("reserver")
+
+        # 🚫 Conflit exact
+        # 🚫 Vérifier chevauchement
+        conflit = Reservation.objects.filter(
+            salle_id=salle_id,
+            date=date_obj,
+            heure_debut__lt=heure_fin,
+            heure_fin__gt=heure_debut
+        ).exists()
+
+        if conflit:
+            messages.error(request, "Cette salle est déjà réservée à cette heure.")
+            return redirect("reserver")
+
+        # ✅ Création
         Reservation.objects.create(
+            salle_id=salle_id,
             user=request.user,
-            salle=salle,
-            date=date,
+            date=date_obj,
             heure_debut=heure_debut,
             heure_fin=heure_fin
         )
 
+        messages.success(request, "Réservation effectuée avec succès.")
         return redirect("mes_reservations")
 
-    return render(request, "gestion/reserver.html", {"salles": salles})
+    # 🔥 IMPORTANT : toujours retourner la page en GET
+    return render(request, "gestion/reserver.html", {
+        "salles": salles,
+        "today": date.today().isoformat()
+    })
 
 
 @login_required
@@ -119,6 +153,9 @@ def dashboard(request):
         "nb_users": nb_users,
     })
 
+
+
+
 def admin_required(view_func): 
     return user_passes_test(lambda u: u.is_staff)(view_func)
 
@@ -129,11 +166,18 @@ def admin_salles(request):
 
 @admin_required
 def admin_reservations(request):
-    reservations = Reservation.objects.all()
-    return render(request, "gestion/admin/reservations.html", {
+    reservations = Reservation.objects.select_related("user", "salle").order_by("-date", "-heure_debut")
+    return render(request, "gestion/admin/dashboard.html", {
         "reservations": reservations
     })
 
+def admin_annuler(request, id):
+    try:
+        reservation = Reservation.objects.get(id=id)
+        reservation.delete()
+    except Reservation.DoesNotExist:
+        pass
+    return redirect('admin_dashboard')
 
 @admin_required
 def admin_users(request):
@@ -141,3 +185,4 @@ def admin_users(request):
     return render(request, "gestion/admin/users.html", {
         "users": users
     })
+
