@@ -6,9 +6,11 @@ from django.contrib.auth.decorators import user_passes_test
 from datetime import datetime, date
 from django.contrib import messages
 from .models import Salle, Reservation
-from django.utils import timezone
 from django.contrib.auth.models import User
 
+
+def admin_required(view_func): 
+    return user_passes_test(lambda u: u.is_staff)(view_func)
 
 
 def index(request):
@@ -46,22 +48,10 @@ def login_view(request):
 
     return render(request, "gestion/login.html")
 
+
 def logout_view(request):
     logout(request)
     return redirect("index")
-
-
-@login_required
-def liste_salles_web(request):
-    salles = Salle.objects.all()
-    return render(request, 'gestion/salles.html', {'salles': salles})
-
-@login_required
-def annuler_reservation(request, reservation_id):
-    reservation = Reservation.objects.get(id=reservation_id)
-    if reservation.user == request.user:
-        reservation.delete()
-    return redirect('mes_reservations')
 
 
 @login_required
@@ -72,7 +62,6 @@ def mes_reservations(request):
 
 @login_required
 def reserver(request):
-
     salles = Salle.objects.all()
 
     if request.method == "POST":
@@ -88,18 +77,16 @@ def reserver(request):
         date_obj = datetime.strptime(date_res, "%Y-%m-%d").date()
         heure_debut_obj = datetime.strptime(heure_debut, "%H:%M").time()
 
-        # 🚫 Date passée
+        # Validations
         if date_obj < date.today():
             messages.error(request, "Impossible de réserver une date passée.")
             return redirect("reserver")
 
-        # 🚫 Heure passée
         if date_obj == date.today() and heure_debut_obj <= datetime.now().time():
             messages.error(request, "Impossible de réserver une heure passée.")
             return redirect("reserver")
 
-        # 🚫 Conflit exact
-        # 🚫 Vérifier chevauchement
+        # Vérifier chevauchement
         conflit = Reservation.objects.filter(
             salle_id=salle_id,
             date=date_obj,
@@ -111,7 +98,7 @@ def reserver(request):
             messages.error(request, "Cette salle est déjà réservée à cette heure.")
             return redirect("reserver")
 
-        # ✅ Création
+        # Création
         Reservation.objects.create(
             salle_id=salle_id,
             user=request.user,
@@ -123,7 +110,6 @@ def reserver(request):
         messages.success(request, "Réservation effectuée avec succès.")
         return redirect("mes_reservations")
 
-    # 🔥 IMPORTANT : toujours retourner la page en GET
     return render(request, "gestion/reserver.html", {
         "salles": salles,
         "today": date.today().isoformat()
@@ -131,53 +117,49 @@ def reserver(request):
 
 
 @login_required
-def supprimer_reservation(request, id):
-    reservation = Reservation.objects.get(id=id)
+def annuler_reservation(request, reservation_id):
+    try:
+        reservation = Reservation.objects.get(id=reservation_id)
+        if reservation.user == request.user:
+            reservation.delete()
+            messages.success(request, "Réservation annulée.")
+    except Reservation.DoesNotExist:
+        messages.error(request, "Réservation introuvable.")
+    return redirect('mes_reservations')
 
-    if reservation.utilisateur == request.user:
-        reservation.delete()
 
-    return redirect("mes_reservations")
-
-# Vue pour le dashboard admin ou il affiche le nombre de salles, de réservations et d'utilisateurs
+# === ADMIN ===
 
 @staff_member_required
 def dashboard(request):
+    # Statistiques
     nb_salles = Salle.objects.count()
     nb_reservations = Reservation.objects.count()
     nb_users = User.objects.count()
+    
+    # Listes complètes
+    reservations = Reservation.objects.select_related("user", "salle").order_by("-date", "-heure_debut")
+    salles = Salle.objects.all()
 
     return render(request, "gestion/admin/dashboard.html", {
         "nb_salles": nb_salles,
         "nb_reservations": nb_reservations,
         "nb_users": nb_users,
+        "reservations": reservations,
+        "salles": salles,
     })
 
 
-
-
-def admin_required(view_func): 
-    return user_passes_test(lambda u: u.is_staff)(view_func)
-
 @admin_required
-def admin_salles(request):
-    salles = Salle.objects.all()
-    return render(request, "gestion/admin/salles.html", {"salles": salles})
-
-@admin_required
-def admin_reservations(request):
-    reservations = Reservation.objects.select_related("user", "salle").order_by("-date", "-heure_debut")
-    return render(request, "gestion/admin/dashboard.html", {
-        "reservations": reservations
-    })
-
 def admin_annuler(request, id):
     try:
         reservation = Reservation.objects.get(id=id)
         reservation.delete()
+        messages.success(request, "Réservation supprimée.")
     except Reservation.DoesNotExist:
-        pass
-    return redirect('admin_dashboard')
+        messages.error(request, "Réservation introuvable.")
+    return redirect('dashboard')
+
 
 @admin_required
 def admin_users(request):
@@ -186,3 +168,56 @@ def admin_users(request):
         "users": users
     })
 
+@admin_required
+def admin_creer_salle(request):
+    if request.method == "POST":
+        nom = request.POST.get("nom")
+        capacite = request.POST.get("capacite")
+        localisation = request.POST.get("localisation")
+        
+        if not nom or not capacite or not localisation:
+            messages.error(request, "Tous les champs sont obligatoires.")
+            return redirect("dashboard")
+        
+        Salle.objects.create(
+            nom=nom,
+            capacite=capacite,
+            localisation=localisation
+        )
+        
+        messages.success(request, f"Salle '{nom}' créée avec succès.")
+        return redirect("dashboard")
+    
+    return redirect("dashboard")
+
+@admin_required
+def admin_modifier_salle(request, id):
+    try:
+        salle = Salle.objects.get(id=id)
+        
+        if request.method == "POST":
+            salle.nom = request.POST.get("nom")
+            salle.capacite = request.POST.get("capacite")
+            salle.localisation = request.POST.get("localisation")
+            salle.save()
+            
+            messages.success(request, f"Salle '{salle.nom}' modifiée avec succès.")
+            return redirect("dashboard")
+        
+        return render(request, "gestion/admin/modifier_salle.html", {"salle": salle})
+    
+    except Salle.DoesNotExist:
+        messages.error(request, "Salle introuvable.")
+        return redirect("dashboard")
+    
+
+@admin_required
+def admin_supprimer_salle(request, id):
+    try:
+        salle = Salle.objects.get(id=id)
+        nom = salle.nom
+        salle.delete()
+        messages.success(request, f"Salle '{nom}' supprimée avec succès.")
+    except Salle.DoesNotExist:
+        messages.error(request, "Salle introuvable.")
+    return redirect("dashboard")

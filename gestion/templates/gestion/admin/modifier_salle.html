@@ -1,0 +1,35 @@
+{% extends "gestion/base.html" %}
+
+{% block content %}
+
+<h3>Modifier la salle</h3>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="nom" class="form-label">Nom de la salle</label>
+                <input type="text" class="form-control" id="nom" name="nom" value="{{ salle.nom }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="capacite" class="form-label">Capacité</label>
+                <input type="number" class="form-control" id="capacite" name="capacite" value="{{ salle.capacite }}" min="1" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="localisation" class="form-label">Localisation</label>
+                <input type="text" class="form-control" id="localisation" name="localisation" value="{{ salle.localisation }}" required>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

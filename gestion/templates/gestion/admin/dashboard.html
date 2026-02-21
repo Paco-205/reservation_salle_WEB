@@ -2,34 +2,144 @@
 
 {% block content %}
 
+<h3>Tableau de bord Administrateur</h3>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Salles</h5>
+                <h2>{{ nb_salles }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Réservations</h5>
+                <h2>{{ nb_reservations }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Utilisateurs</h5>
+                <h2>{{ nb_users }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<!-- Toutes les réservations -->
 <h5 class="mt-4">Toutes les réservations</h5>
 
 <table class="table table-striped">
-<tr>
-    <th>Utilisateur</th>
-    <th>Salle</th>
-    <th>Date</th>
-    <th>Heure</th>
-    <th>Action</th>
-</tr>
+    <tr>
+        <th>Utilisateur</th>
+        <th>Salle</th>
+        <th>Date</th>
+        <th>Heure</th>
+        <th>Action</th>
+    </tr>
 
-{% for r in reservations %}
-<tr>
-    <td>{{ r.user.username }}</td>
-    <td>{{ r.salle.nom }}</td>
-    <td>{{ r.date }}</td>
-    <td>{{ r.heure_debut }} - {{ r.heure_fin }}</td>
-    <td>
-        <a href="{% url 'admin_annuler' r.id %}" class="btn btn-danger btn-sm">Annuler</a>
-    </td>
-</tr>
-{% empty %}
-<tr>
-    <td colspan="5">Aucune réservation</td>
-</tr>
-{% endfor %}
+    {% for r in reservations %}
+    <tr>
+        <td>{{ r.user.username }}</td>
+        <td>{{ r.salle.nom }}</td>
+        <td>{{ r.date }}</td>
+        <td>{{ r.heure_debut }} - {{ r.heure_fin }}</td>
+        <td>
+            <a href="{% url 'admin_annuler' r.id %}" class="btn btn-danger btn-sm">
+                Supprimer
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="5">Aucune réservation</td>
+    </tr>
+    {% endfor %}
 </table>
 
-<p>Total réservations : {{ reservations|length }}</p>
+<p><strong>Total réservations :</strong> {{ reservations|length }}</p>
+
+
+
+<hr class="my-5">
+
+<!-- Liste des salles -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mt-4">Liste des salles</h5>
+    <!-- Bouton pour ouvrir le modal -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#creerSalleModal">
+        ➕ Créer une salle
+    </button>
+</div>
+
+<!-- Modal pour créer une salle -->
+<div class="modal fade" id="creerSalleModal" tabindex="-1" aria-labelledby="creerSalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="creerSalleModalLabel">Créer une nouvelle salle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'admin_creer_salle' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nom" class="form-label">Nom de la salle</label>
+                        <input type="text" class="form-control" id="nom" name="nom" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="capacite" class="form-label">Capacité</label>
+                        <input type="number" class="form-control" id="capacite" name="capacite" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="localisation" class="form-label">Localisation</label>
+                        <input type="text" class="form-control" id="localisation" name="localisation" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Nom</th>
+        <th>Capacité</th>
+        <th>Localisation</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for salle in salles %}
+    <tr>
+        <td>{{ salle.nom }}</td>
+        <td>{{ salle.capacite }}</td>
+        <td>{{ salle.localisation }}</td>
+        <td>
+            <a href="{% url 'admin_modifier_salle' salle.id %}" class="btn btn-warning btn-sm">Modifier</a>
+            <a href="{% url 'admin_supprimer_salle' salle.id %}" 
+                class="btn btn-danger btn-sm" 
+                onclick="return confirm('Voulez-vous vraiment supprimer cette salle ?')">
+                    🗑️ Supprimer
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">Aucune salle disponible</td>
+    </tr>
+    {% endfor %}
+</table>
 
 {% endblock %}
